@@ -2,6 +2,6 @@ language: java
 jdk:
   - oraclejdk8
   - oraclejdk7
+  - oraclejdk6
   - openjdk6
   - openjdk7
-  - openjdk8
