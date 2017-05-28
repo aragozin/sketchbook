@@ -15,6 +15,8 @@
  */
 package org.gridkit.sketchbook;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,6 +27,20 @@ import java.util.List;
  * @author Alexey Ragozin (alexey.ragozin@gmail.com)
  */
 public class TextTable {
+
+	public static String formatCsv(TextTable table) {
+		StringWriter writer = new StringWriter();
+		try {
+			table.formatCsv(writer);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return writer.toString();
+	}
+
+	public static String formatASCII(TextTable table) {
+		return table.formatTextTable(Integer.MAX_VALUE);
+	}
 
     public static final Comparator<String> NUM_CMP = new NumberCmp();
     
@@ -135,6 +151,54 @@ public class TextTable {
 	    }
 	}
 	
+	public void formatCsv(Appendable out) throws IOException {
+		for(String[] row: rows) {
+			for(int i = 0; i != row.length; ++i) {
+				if (i > 0) {
+					out.append(",");
+				}
+				formatCell(out, row[i]);
+			}
+			out.append("\n");
+		}
+	}
+	
+	private void formatCell(Appendable out, String row) throws IOException {
+		if (row == null || row.length() == 0) {
+			return;
+		}
+		if (isCsvSafe(row)) {
+			out.append(row);
+		}
+		else {
+			out.append('"');
+			for(int i = 0; i != row.length(); ++i) {
+				char c = row.charAt(i);
+				if (c == '"') {
+					out.append("\"\"");
+				}
+				else if (c == '\n') {
+					// replace line end with space
+					out.append(' ');
+				}
+				else {
+					out.append(c);
+				}
+			}
+			out.append('"');
+		}
+	}
+
+	private boolean isCsvSafe(String row) {
+		for(int i = 0; i != row.length(); ++i) {
+			char ch = row.charAt(i);
+			if (!Character.isJavaIdentifierPart(ch) && "._-".indexOf(ch) < 0) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	public String formatTextTable(int maxCellWidth) {
 		return formatTable(rows, maxCellWidth, true);
 	}
